@@ -39,7 +39,7 @@ public class LockOnHandler {
     }
 
     public static boolean lockedOn;
-    private static Entity targetted;
+    private static Entity targeted;
 
     private static void handleKeyPress(TickEvent.RenderTickEvent e) {
         PlayerEntity player = mc.player;
@@ -57,8 +57,8 @@ public class LockOnHandler {
                 tabToNextEnemy(player);
             }
 
-            if (targetted != null) {
-                Vector3d targetPos = targetted.getPositionVec();
+            if (targeted != null) {
+                Vector3d targetPos = targeted.getPositionVec();
                 Vector3d directionVec = targetPos.subtract(mc.player.getPositionVec()).normalize();
                 double angle = Math.atan2(-directionVec.x, directionVec.z) * 180 / Math.PI;
 
@@ -85,15 +85,15 @@ public class LockOnHandler {
 
     private static void attemptEnterLockOn(PlayerEntity player) {
         tabToNextEnemy(player);
-        if (targetted != null) {
+        if (targeted != null) {
             lockedOn = true;
         }
     }
 
     private static void tickLockedOn() {
         list.removeIf(livingEntity -> mc.player == null || !livingEntity.isAlive());
-        if (targetted != null && !targetted.isAlive()) {
-            targetted = null;
+        if (targeted != null && !targeted.isAlive()) {
+            targeted = null;
             lockedOn = false;
         }
     }
@@ -131,11 +131,11 @@ public class LockOnHandler {
     }
 
     private static void tabToNextEnemy(PlayerEntity player) {
-        targetted = findNearby(player);
+        targeted = findNearby(player);
     }
 
     private static void leaveLockOn() {
-        targetted = null;
+        targeted = null;
         lockedOn = false;
         list.clear();
     }
