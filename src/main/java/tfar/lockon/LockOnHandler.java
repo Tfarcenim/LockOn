@@ -1,16 +1,16 @@
 package tfar.lockon;
 
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.entity.EntityPredicate;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
+import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
 
@@ -23,16 +23,16 @@ import static tfar.lockon.LockOn.MODID;
 
 public class LockOnHandler {
 
-    public static KeyBinding LOCK_ON;
-    public static KeyBinding TAB;
+    public static KeyMapping LOCK_ON;
+    public static KeyMapping TAB;
 
     public static List<LivingEntity> list = new ArrayList<>();
 
     private static final Minecraft mc = Minecraft.getInstance();
 
     public static void client(FMLClientSetupEvent e) {
-        LOCK_ON = new KeyBinding("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
-        TAB = new KeyBinding("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
+        LOCK_ON = new KeyMapping("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
+        TAB = new KeyMapping("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
         ClientRegistry.registerKeyBinding(LOCK_ON);
         ClientRegistry.registerKeyBinding(TAB);
         EVENT_BUS.addListener(LockOnHandler::handleKeyPress);
@@ -42,10 +42,10 @@ public class LockOnHandler {
     private static Entity targeted;
 
     private static void handleKeyPress(TickEvent.RenderTickEvent e) {
-        PlayerEntity player = mc.player;
-        if (e.phase == TickEvent.Phase.START && mc.player != null && !mc.isGamePaused()) {
+        Player player = mc.player;
+        if (e.phase == TickEvent.Phase.START && mc.player != null && !mc.isPaused()) {
             tickLockedOn();
-            while (LOCK_ON.isPressed()) {
+            while (LOCK_ON.consumeClick()) {
                 if (lockedOn) {
                     leaveLockOn();
                 } else {
@@ -53,16 +53,16 @@ public class LockOnHandler {
                 }
             }
 
-            while (TAB.isPressed()) {
+            while (TAB.consumeClick()) {
                 tabToNextEnemy(player);
             }
 
             if (targeted != null) {
-                Vector3d targetPos = targeted.getPositionVec();
-                Vector3d directionVec = targetPos.subtract(mc.player.getPositionVec()).normalize();
+                Vec3 targetPos = targeted.position();
+                Vec3 directionVec = targetPos.subtract(mc.player.position()).normalize();
                 double angle = Math.atan2(-directionVec.x, directionVec.z) * 180 / Math.PI;
 
-                float adjustedPrevYaw = mc.player.prevRotationYaw;
+                float adjustedPrevYaw = mc.player.yRotO;
                 if (Math.abs(angle - adjustedPrevYaw) > 180) {
                     if (adjustedPrevYaw > angle) {
                         angle += 360;
@@ -71,19 +71,19 @@ public class LockOnHandler {
                     }
                 }
 
-                double newDelta = MathHelper.lerp(e.renderTickTime, adjustedPrevYaw, angle);
+                double newDelta = Mth.lerp(e.renderTickTime, adjustedPrevYaw, angle);
                 if (newDelta > 180) {
                     newDelta -= 360;
                 }
                 if (newDelta < -180) {
                     newDelta += 360;
                 }
-                mc.player.rotationYaw = (float)newDelta;
+                mc.player.setYRot((float)newDelta);
             }
         }
     }
 
-    private static void attemptEnterLockOn(PlayerEntity player) {
+    private static void attemptEnterLockOn(Player player) {
         tabToNextEnemy(player);
         if (targeted != null) {
             lockedOn = true;
@@ -99,12 +99,12 @@ public class LockOnHandler {
     }
 
     private static final Predicate<LivingEntity> ENTITY_PREDICATE = entity -> entity.isAlive() && entity.attackable();
-    private static final EntityPredicate ENEMY_CONDITION = new EntityPredicate().setDistance(20.0D).setCustomPredicate(ENTITY_PREDICATE);
+    private static final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(20.0D).selector(ENTITY_PREDICATE);
 
     private static int cycle = -1;
 
-    public static Entity findNearby(PlayerEntity player) {
-        List<LivingEntity> entities = player.world.getTargettableEntitiesWithinAABB(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().grow(10.0D, 2.0D, 10.0D));
+    public static Entity findNearby(Player player) {
+        List<LivingEntity> entities = player.level.getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(10.0D, 2.0D, 10.0D));
         if (lockedOn) {
             cycle++;
             for (LivingEntity entity : entities) {
@@ -130,7 +130,7 @@ public class LockOnHandler {
         }
     }
 
-    private static void tabToNextEnemy(PlayerEntity player) {
+    private static void tabToNextEnemy(Player player) {
         targeted = findNearby(player);
     }
 
