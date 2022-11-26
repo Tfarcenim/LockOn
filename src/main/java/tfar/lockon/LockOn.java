@@ -36,6 +36,8 @@ public class LockOn {
         public static ForgeConfigSpec.BooleanValue renderIcons;
         public static ForgeConfigSpec.ConfigValue<? extends String> color;
         public static ForgeConfigSpec.DoubleValue width;
+
+        public static ForgeConfigSpec.IntValue range;
         public static ForgeConfigSpec.DoubleValue height;
         public ClientConfig(ForgeConfigSpec.Builder builder) {
             builder.push("client");
@@ -45,6 +47,9 @@ public class LockOn {
             color = builder
                     .comment("Color of lock on, #AARRGGBB format")
                     .define("color","#FFFFFF00");
+            range = builder
+                    .comment("Width of triangle")
+                    .defineInRange("range",16,0,100);
             width = builder
                     .comment("Width of triangle")
                     .defineInRange("width",1,0,10d);

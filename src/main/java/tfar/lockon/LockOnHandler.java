@@ -136,7 +136,7 @@ public class LockOnHandler {
     }
 
     private static void tickLockedOn() {
-        list.removeIf(livingEntity -> mc.player == null || !livingEntity.isAlive());
+        list.removeIf(livingEntity -> !livingEntity.isAlive());
         if (targeted != null && !targeted.isAlive()) {
             targeted = null;
             lockedOn = false;
@@ -144,13 +144,17 @@ public class LockOnHandler {
     }
 
     private static final Predicate<LivingEntity> ENTITY_PREDICATE = entity -> entity.isAlive() && entity.attackable() && entity instanceof Enemy;
-    private static final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(20.0D).selector(ENTITY_PREDICATE);
 
     private static int cycle = -1;
 
     public static Entity findNearby(Player player) {
+
+        int r = LockOn.ClientConfig.range.get();
+
+        final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(r).selector(ENTITY_PREDICATE);
+
         List<LivingEntity> entities = player.level
-                .getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(10.0D, 2.0D, 10.0D)).stream().filter(player::hasLineOfSight).toList();
+                .getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(r)).stream().filter(player::hasLineOfSight).toList();
         if (lockedOn) {
             cycle++;
             for (LivingEntity entity : entities) {
