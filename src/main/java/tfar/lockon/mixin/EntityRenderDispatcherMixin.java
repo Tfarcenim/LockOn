@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import tfar.lockon.LockOnHandler;
 
+//thanks neat
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
     @Shadow
@@ -29,7 +30,7 @@ public abstract class EntityRenderDispatcherMixin {
             shift = At.Shift.AFTER
     )
     )
-    private void neat_renderHealthBar(Entity entity, double worldX, double worldY, double worldZ, float entityYRot, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, CallbackInfo ci) {
+    private void renderLockOnIcon(Entity entity, double worldX, double worldY, double worldZ, float entityYRot, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, CallbackInfo ci) {
         LockOnHandler.renderWorldLast(entity, poseStack, buffers, cameraOrientation());
     }
 }
