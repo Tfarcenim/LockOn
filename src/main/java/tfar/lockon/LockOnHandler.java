@@ -17,8 +17,8 @@ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
@@ -26,7 +26,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 import static tfar.lockon.LockOn.MODID;
@@ -44,10 +43,13 @@ public class LockOnHandler {
     public static void client(FMLClientSetupEvent e) {
         LOCK_ON = new KeyMapping("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
         TAB = new KeyMapping("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
-        ClientRegistry.registerKeyBinding(LOCK_ON);
-        ClientRegistry.registerKeyBinding(TAB);
         EVENT_BUS.addListener(LockOnHandler::logOff);
         EVENT_BUS.addListener(LockOnHandler::tick);
+    }
+
+    public static void keyBind(RegisterKeyMappingsEvent e) {
+        e.register(LOCK_ON);
+        e.register(TAB);
     }
 
 
@@ -100,7 +102,7 @@ public class LockOnHandler {
         }
     }
 
-    private static void logOff(ClientPlayerNetworkEvent.LoggedOutEvent e) {
+    private static void logOff(ClientPlayerNetworkEvent.LoggingOut e) {
         leaveLockOn();
     }
 

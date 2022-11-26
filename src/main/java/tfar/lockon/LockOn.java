@@ -18,8 +18,10 @@ public class LockOn {
 
     public LockOn() {
         ModLoadingContext.get().registerConfig(Type.CLIENT, CLIENT_SPEC);
-        if (FMLEnvironment.dist == Dist.CLIENT)
+        if (FMLEnvironment.dist == Dist.CLIENT) {
             FMLJavaModLoadingContext.get().getModEventBus().addListener(LockOnHandler::client);
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(LockOnHandler::keyBind);
+        }
     }
 
     public static final ClientConfig CLIENT;
