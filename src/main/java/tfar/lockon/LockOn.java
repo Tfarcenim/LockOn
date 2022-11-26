@@ -1,9 +1,13 @@
 package tfar.lockon;
 
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.apache.commons.lang3.tuple.Pair;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(LockOn.MODID)
@@ -13,8 +17,42 @@ public class LockOn {
     public static final String MODID = "lockon";
 
     public LockOn() {
+        ModLoadingContext.get().registerConfig(Type.CLIENT, CLIENT_SPEC);
         if (FMLEnvironment.dist == Dist.CLIENT)
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(LockOnHandler::client);
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(LockOnHandler::client);
+    }
+
+    public static final ClientConfig CLIENT;
+    public static final ForgeConfigSpec CLIENT_SPEC;
+
+    static {
+        final Pair<ClientConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
+        CLIENT_SPEC = specPair.getRight();
+        CLIENT = specPair.getLeft();
+    }
+
+
+    public static class ClientConfig {
+        public static ForgeConfigSpec.BooleanValue renderIcons;
+        public static ForgeConfigSpec.ConfigValue<? extends String> color;
+        public static ForgeConfigSpec.DoubleValue width;
+        public static ForgeConfigSpec.DoubleValue height;
+        public ClientConfig(ForgeConfigSpec.Builder builder) {
+            builder.push("client");
+            renderIcons = builder
+                    .comment("Render the lock on icon around the targeted enemy")
+                    .define("render_icon", true);
+            color = builder
+                    .comment("Color of lock on, #AARRGGBB format")
+                    .define("color","#FFFFFF00");
+            width = builder
+                    .comment("Width of triangle")
+                    .defineInRange("width",1,0,10d);
+            height = builder
+                    .comment("Height of triangle")
+                    .defineInRange("height",.25f,0,10d);
+            builder.pop();
+        }
     }
 
     /*public static Optional<Entity> rayTrace(PlayerEntity player) {

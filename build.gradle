@@ -3,10 +3,12 @@ buildscript {
         // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
         maven { url = 'https://maven.minecraftforge.net' }
         maven { url = 'https://maven.parchmentmc.org' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
         classpath 'org.parchmentmc:librarian:1.+'
+        classpath 'org.spongepowered:mixingradle:0.7.+'
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
@@ -40,6 +42,7 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
+            arg "-mixin.config="+archivesBaseName+".mixins.json"
 
 
             // Recommended logging level for the console
@@ -54,6 +57,7 @@ minecraft {
 
         server {
             workingDirectory project.file('run')
+            arg "-mixin.config="+archivesBaseName+".mixins.json"
 
 
             // Recommended logging level for the console
@@ -100,6 +104,7 @@ dependencies {
 
     // The 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
     // provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // These dependencies get remapped to your current MCP mappings
     // deobf 'com.mod-buildcraft:buildcraft:6.0.8:dev'
@@ -120,9 +125,16 @@ jar {
                 "Implementation-Title": project.name,
                 "Implementation-Version": "${version}",
                 "Implementation-Vendor" :"examplemodsareus",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConfigs": "${modid}.mixins.json"
         ])
     }
+}
+
+apply plugin: 'org.spongepowered.mixin'
+
+mixin {
+    add sourceSets.main, "${modid}.refmap.json"
 }
 
 // Example configuration to allow publishing using the maven-publish task
