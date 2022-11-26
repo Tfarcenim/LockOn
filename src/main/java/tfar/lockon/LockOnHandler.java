@@ -150,7 +150,7 @@ public class LockOnHandler {
 
     public static Entity findNearby(Player player) {
         List<LivingEntity> entities = player.level
-                .getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(10.0D, 2.0D, 10.0D)).stream().filter(livingEntity -> player.hasLineOfSight(livingEntity)).collect(Collectors.toList());
+                .getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(10.0D, 2.0D, 10.0D)).stream().filter(player::hasLineOfSight).toList();
         if (lockedOn) {
             cycle++;
             for (LivingEntity entity : entities) {
