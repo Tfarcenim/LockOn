@@ -41,13 +41,13 @@ public class LockOnHandler {
     private static final Minecraft mc = Minecraft.getInstance();
 
     public static void client(FMLClientSetupEvent e) {
-        LOCK_ON = new KeyMapping("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
-        TAB = new KeyMapping("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
         EVENT_BUS.addListener(LockOnHandler::logOff);
         EVENT_BUS.addListener(LockOnHandler::tick);
     }
 
     public static void keyBind(RegisterKeyMappingsEvent e) {
+        LOCK_ON = new KeyMapping("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
+        TAB = new KeyMapping("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
         e.register(LOCK_ON);
         e.register(TAB);
     }
