@@ -3,9 +3,7 @@ package tfar.lockon;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Quaternion;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -21,6 +19,8 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ public class LockOnHandler {
 
 
 
-    public static void renderWorldLast(Entity entity, PoseStack poseStack, MultiBufferSource buffers, Quaternion quaternion) {
+    public static void renderWorldLast(Entity entity, PoseStack poseStack, MultiBufferSource buffers, Quaternionf quaternion) {
         if (targeted == entity && LockOn.ClientConfig.renderIcons.get()) {
             VertexConsumer builder = buffers.getBuffer(ModRenderType.RENDER_TYPE);
             poseStack.pushPose();
@@ -66,7 +66,7 @@ public class LockOnHandler {
 
             float rotate = (Util.getNanos() /-8_000_000f);
 
-            poseStack.mulPose(Vector3f.ZP.rotationDegrees(rotate));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(rotate));
 
 
             float w = (float)(double)LockOn.ClientConfig.width.get();float h = (float)(double)LockOn.ClientConfig.height.get();
@@ -196,7 +196,7 @@ public class LockOnHandler {
         up,down,left,right;
     }
 
-    public static void fillTriangles(VertexConsumer builder, Matrix4f matrix4f, float x, float y,float width, float height,float bbHeight, float z, int aarrggbb) {
+    public static void fillTriangles(VertexConsumer builder, Matrix4f matrix4f, float x, float y, float width, float height, float bbHeight, float z, int aarrggbb) {
         float a = (aarrggbb >> 24 & 0xff) / 255f;
         float r = (aarrggbb >> 16 & 0xff) / 255f;
         float g = (aarrggbb >> 8 & 0xff) / 255f;
