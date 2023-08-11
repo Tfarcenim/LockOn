@@ -19,9 +19,9 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
 
-version = "${mc_version}-${mod_version}"
-group = "com.tfar.${modid}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "${modid}"
+version = "$mc_version-$mod_version"
+group = "com.tfar.$modid" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "$modid"
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)

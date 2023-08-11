@@ -155,7 +155,7 @@ public class LockOnHandler {
 
         final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(r).selector(ENTITY_PREDICATE);
 
-        List<LivingEntity> entities = player.level
+        List<LivingEntity> entities = player.level()
                 .getNearbyEntities(LivingEntity.class, ENEMY_CONDITION, player, player.getBoundingBox().inflate(r)).stream().filter(player::hasLineOfSight).toList();
         if (lockedOn) {
             cycle++;
