@@ -12,7 +12,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -43,6 +42,7 @@ public class LockOnHandler {
     public static void client(FMLClientSetupEvent e) {
         EVENT_BUS.addListener(LockOnHandler::logOff);
         EVENT_BUS.addListener(LockOnHandler::tick);
+
     }
 
     public static void keyBind(RegisterKeyMappingsEvent e) {
@@ -69,7 +69,7 @@ public class LockOnHandler {
             poseStack.mulPose(Axis.ZP.rotationDegrees(rotate));
 
 
-            float w = (float)(double)LockOn.ClientConfig.width.get();float h = (float)(double)LockOn.ClientConfig.height.get();
+            float w = (float)(double)LockOn.ClientConfig.width.get();float h = (float)(double) LockOn.ClientConfig.CLIENT.height.get();
 
             int color = 0xffffff00;
 
@@ -145,13 +145,24 @@ public class LockOnHandler {
         }
     }
 
-    private static final Predicate<LivingEntity> ENTITY_PREDICATE = entity -> entity.isAlive() && entity.attackable() && entity instanceof Enemy;
+    private static final Predicate<LivingEntity> ENTITY_PREDICATE = entity -> entity.isAlive() && entity.attackable() &&
+            LockOn.ClientConfig.CLIENT.allowed.get().contains(entity.getType()) && !isFriendly(entity);
+
+    private static boolean isFriendly(LivingEntity entity) {
+        Player localPlayer = Minecraft.getInstance().player;
+        //check if the target is owned by the player
+        if (entity.isAlliedTo(localPlayer)) {
+            return true;
+        }
+
+        return false;
+    }
 
     private static int cycle = -1;
 
     public static Entity findNearby(Player player) {
 
-        int r = LockOn.ClientConfig.range.get();
+        int r = LockOn.ClientConfig.CLIENT.range.get();
 
         final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(r).selector(ENTITY_PREDICATE);
 
