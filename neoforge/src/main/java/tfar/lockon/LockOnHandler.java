@@ -14,10 +14,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;
@@ -26,8 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
-import static tfar.lockon.LockOn.MODID;
+import static tfar.lockon.LockOn.MOD_ID;
 
 
 public class LockOnHandler {
@@ -40,14 +39,14 @@ public class LockOnHandler {
     private static final Minecraft mc = Minecraft.getInstance();
 
     public static void client(FMLClientSetupEvent e) {
-        EVENT_BUS.addListener(LockOnHandler::logOff);
-        EVENT_BUS.addListener(LockOnHandler::tick);
+
 
     }
 
     public static void keyBind(RegisterKeyMappingsEvent e) {
-        LOCK_ON = new KeyMapping("key." + MODID + ".lock_on", GLFW.GLFW_KEY_O, "key.categories." + MODID);
-        TAB = new KeyMapping("key." + MODID + ".tab", GLFW.GLFW_KEY_TAB, "key.categories." + MODID);
+        String cat = "key.categories." + MOD_ID;
+        LOCK_ON = new KeyMapping("key." + MOD_ID + ".lock_on", GLFW.GLFW_KEY_O, cat);
+        TAB = new KeyMapping("key." + MOD_ID + ".tab", GLFW.GLFW_KEY_TAB, cat);
         e.register(LOCK_ON);
         e.register(TAB);
     }
@@ -55,7 +54,7 @@ public class LockOnHandler {
 
 
     public static void renderWorldLast(Entity entity, PoseStack poseStack, MultiBufferSource buffers, Quaternionf quaternion) {
-        if (targeted == entity && LockOn.ClientConfig.renderIcons.get()) {
+        if (targeted == entity && LockOnNeoforge.ClientConfig.CLIENT.renderIcons.get()) {
             VertexConsumer builder = buffers.getBuffer(ModRenderType.RENDER_TYPE);
             poseStack.pushPose();
 
@@ -69,12 +68,12 @@ public class LockOnHandler {
             poseStack.mulPose(Axis.ZP.rotationDegrees(rotate));
 
 
-            float w = (float)(double)LockOn.ClientConfig.width.get();float h = (float)(double) LockOn.ClientConfig.CLIENT.height.get();
+            float w = (float)(double) LockOnNeoforge.ClientConfig.CLIENT.width.get();float h = (float)(double) LockOnNeoforge.ClientConfig.CLIENT.height.get();
 
             int color = 0xffffff00;
 
             try {
-                color = Integer.decode(LockOn.ClientConfig.color.get());
+                color = Integer.decode(LockOnNeoforge.ClientConfig.CLIENT.color.get());
             } catch (NumberFormatException e) {
                 //wut
             }
@@ -85,24 +84,22 @@ public class LockOnHandler {
         }
     }
 
-    private static void tick(TickEvent.ClientTickEvent e) {
-        if (e.phase == TickEvent.Phase.START) {
-            while (LOCK_ON.consumeClick()) {
-                if (lockedOn) {
-                    leaveLockOn();
-                } else {
-                    attemptEnterLockOn(Minecraft.getInstance().player);
-                }
+    public static void tick(ClientTickEvent.Pre e) {
+        while (LOCK_ON.consumeClick()) {
+            if (lockedOn) {
+                leaveLockOn();
+            } else {
+                attemptEnterLockOn(Minecraft.getInstance().player);
             }
-
-            while (TAB.consumeClick()) {
-                tabToNextEnemy(Minecraft.getInstance().player);
-            }
-            tickLockedOn();
         }
+
+        while (TAB.consumeClick()) {
+            tabToNextEnemy(Minecraft.getInstance().player);
+        }
+        tickLockedOn();
     }
 
-    private static void logOff(ClientPlayerNetworkEvent.LoggingOut e) {
+    public static void logOff(ClientPlayerNetworkEvent.LoggingOut e) {
         leaveLockOn();
     }
 
@@ -146,7 +143,7 @@ public class LockOnHandler {
     }
 
     private static final Predicate<LivingEntity> ENTITY_PREDICATE = entity -> entity.isAlive() && entity.attackable() &&
-            LockOn.ClientConfig.CLIENT.allowed.get().contains(entity.getType()) && !isFriendly(entity);
+            LockOnNeoforge.ClientConfig.CLIENT.allowed.get().contains(entity.getType()) && !isFriendly(entity);
 
     private static boolean isFriendly(LivingEntity entity) {
         Player localPlayer = Minecraft.getInstance().player;
@@ -162,7 +159,7 @@ public class LockOnHandler {
 
     public static Entity findNearby(Player player) {
 
-        int r = LockOn.ClientConfig.CLIENT.range.get();
+        int r = LockOnNeoforge.ClientConfig.CLIENT.range.get();
 
         final TargetingConditions ENEMY_CONDITION = TargetingConditions.forCombat().range(r).selector(ENTITY_PREDICATE);
 
@@ -235,26 +232,26 @@ public class LockOnHandler {
 
         switch (dir) {
             case up -> {
-                builder.vertex(matrix4f, x, y, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x+width/2, y+height, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x-width/2, y+height, z).color(r, g, b, a).endVertex();
+                builder.addVertex(matrix4f, x, y, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x+width/2, y+height, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x-width/2, y+height, z).setColor(r, g, b, a);
             }
             case down -> {
-                builder.vertex(matrix4f, x, y, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x+width/2, y-height, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x-width/2, y-height, z).color(r, g, b, a).endVertex();
+                builder.addVertex(matrix4f, x, y, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x+width/2, y-height, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x-width/2, y-height, z).setColor(r, g, b, a);
             }
 
             case left -> {
-                builder.vertex(matrix4f, x - bbHeight, y, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x-  bbHeight-height, y-width/2, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x-  bbHeight-height, y+width/2, z).color(r, g, b, a).endVertex();
+                builder.addVertex(matrix4f, x - bbHeight, y, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x-  bbHeight-height, y-width/2, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x-  bbHeight-height, y+width/2, z).setColor(r, g, b, a);
             }
 
             case right -> {
-                builder.vertex(matrix4f, x +bbHeight, y, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x+bbHeight+ height, y-width/2, z).color(r, g, b, a).endVertex();
-                builder.vertex(matrix4f, x+bbHeight+ height, y+width/2, z).color(r, g, b, a).endVertex();
+                builder.addVertex(matrix4f, x +bbHeight, y, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x+bbHeight+ height, y-width/2, z).setColor(r, g, b, a);
+                builder.addVertex(matrix4f, x+bbHeight+ height, y+width/2, z).setColor(r, g, b, a);
             }
         }
     }

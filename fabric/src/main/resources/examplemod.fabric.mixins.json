@@ -6,7 +6,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
   "client": [
-    "MixinTitleScreen"
+    "tfar.lockon.mixin.MixinTitleScreen"
   ],
   "server": [],
   "injectors": {

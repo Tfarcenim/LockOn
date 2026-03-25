@@ -3,60 +3,59 @@ package tfar.lockon;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 // The value here should match an entry in the META-INF/mods.toml file
-@Mod(LockOn.MODID)
-public class LockOn {
+@Mod(value = LockOn.MOD_ID,dist = Dist.CLIENT)
+public class LockOnNeoforge {
     // Directly reference a log4j logger.
 
-    public static final String MODID = "lockon";
 
-    public LockOn() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.CLIENT_SPEC);
+    public LockOnNeoforge(IEventBus bus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.CLIENT_SPEC);
 
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-        if (FMLEnvironment.dist.isClient()) {
-            bus.addListener(LockOnHandler::client);
-            bus.addListener(LockOnHandler::keyBind);
             bus.addListener(this::setup);
-        }
+            bus.addListener(LockOnHandler::keyBind);
+        LockOn.init();
     }
 
     void setup(FMLClientSetupEvent event) {
+        NeoForge.EVENT_BUS.addListener(LockOnHandler::logOff);
+        NeoForge.EVENT_BUS.addListener(LockOnHandler::tick);
     }
+
 
     public static class ClientConfig {
 
         public static ClientConfig CLIENT;
-        public static ForgeConfigSpec CLIENT_SPEC;
+        public static ModConfigSpec CLIENT_SPEC;
 
         static {
-            final Pair<ClientConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
+            final Pair<ClientConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(ClientConfig::new);
             CLIENT_SPEC = specPair.getRight();
             CLIENT = specPair.getLeft();
         }
 
-        public static ForgeConfigSpec.BooleanValue renderIcons;
-        public static ForgeConfigSpec.ConfigValue<? extends String> color;
-        public static ForgeConfigSpec.DoubleValue width;
+        public final ModConfigSpec.BooleanValue renderIcons;
+        public final ModConfigSpec.ConfigValue<? extends String> color;
+        public final ModConfigSpec.DoubleValue width;
 
-        public final ForgeConfigSpec.IntValue range;
-        public final ForgeConfigSpec.DoubleValue height;
+        public final ModConfigSpec.IntValue range;
+        public final ModConfigSpec.DoubleValue height;
 
         public final ConfigHelper.ConfigObject<List<EntityType<?>>> allowed;
-        public ClientConfig(ForgeConfigSpec.Builder builder) {
+        public ClientConfig(ModConfigSpec.Builder builder) {
             builder.push("client");
             renderIcons = builder
                     .comment("Render the lock on icon around the targeted enemy")

@@ -23,34 +23,101 @@ SOFTWARE.
 
 package tfar.lockon;
 
+import java.time.temporal.Temporal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.NullObject;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import com.mojang.serialization.DataResult.PartialResult;
 import com.mojang.serialization.DynamicOps;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nonnull;
-import java.time.temporal.Temporal;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 
 
 /**
  * Helpers for creating configs and defining complex objects in configs
  */
-public class ConfigHelper
-{
+public class ConfigHelper {
     private ConfigHelper() {} // utility class
 
     static final Logger LOGGER = LogManager.getLogger();
+
+    /**
+     * Register a config using a default config filename for your mod.
+     * @param <T> The class of your config implementation
+     * @param modid String of your modid
+     * @param configType Forge config type:
+     * <ul>
+     * <li>SERVER configs are defined by the server and synced to clients; individual configs are generated per-save. Filename will be modid-server.toml
+     * <li>COMMON configs are definable by both server and clients and not synced (they may have different values). Filename will be modid-client.toml
+     * <li>CLIENT configs are defined by clients and not used on the server. Filename will be modid-client.toml.
+     * </ul>
+     * @param configFactory A constructor or factory for your config class
+     * @return An instance of your config class
+     */
+    public static <T> T register(
+            final String modid,
+            final ModConfig.Type configType,
+            final Function<ModConfigSpec.Builder, T> configFactory)
+    {
+        return register(modid, configType, configFactory, null);
+    }
+
+    /**
+     * Register a config using a custom filename.
+     * @param <T> Your config class
+     * @param modid String of your modid
+     * @param configType Forge config type:
+     * <ul>
+     * <li>SERVER configs are defined by the server and synced to clients; individual configs are generated per-save.
+     * <li>COMMON configs are definable by both server and clients and not synced (they may have different values)
+     * <li>CLIENT configs are defined by clients and not used on the server
+     * </ul>
+     * @param configFactory A constructor or factory for your config class
+     * @param configName Name of your config file. Supports subfolders, e.g. "yourmod/yourconfig".
+     * @return An instance of your config class
+     */
+    public static <T> T register(
+            final String modid,
+            final ModConfig.Type configType,
+            final Function<ModConfigSpec.Builder, T> configFactory,
+            final @Nullable String configName)
+    {
+        final var mod = ModList.get().getModContainerById(modid).get();
+        final org.apache.commons.lang3.tuple.Pair<T, ModConfigSpec> entry = new ModConfigSpec.Builder()
+                .configure(configFactory);
+        final T config = entry.getLeft();
+        final ModConfigSpec spec = entry.getRight();
+        if (configName == null)
+        {
+            mod.registerConfig(configType,spec);
+        }
+        else
+        {
+            mod.registerConfig(configType, spec, configName + ".toml");
+        }
+
+        return config;
+    }
 
     /**
      * Define a config value for a complex object.
@@ -63,10 +130,10 @@ public class ConfigHelper
      * If the codec fails to deserialize the config field at a later time, an error message will be logged and this default instance will be used instead.
      * @return A reload-sensitive wrapper around your config object value. Use ConfigObject#get to get the most up-to-date object.
      */
-    public static <T> ConfigObject<T> defineObject(ForgeConfigSpec.Builder builder, String name, Codec<T> codec, T defaultObject)
+    public static <T> ConfigObject<T> defineObject(ModConfigSpec.Builder builder, String name, Codec<T> codec, T defaultObject)
     {
         DataResult<Object> encodeResult = codec.encodeStart(TomlConfigOps.INSTANCE, defaultObject);
-        Object encodedObject = encodeResult.getOrThrow(false, s -> LOGGER.error("Unable to encode default value: {}", s));
+        Object encodedObject = encodeResult.getOrThrow(s -> new IllegalArgumentException(String.format("Unable to encode default value %s: %s", defaultObject, s)));
         ConfigValue<Object> value = builder.define(name, encodedObject);
         return new ConfigObject<>(value, codec, defaultObject, encodedObject);
     }
@@ -123,7 +190,7 @@ public class ConfigHelper
         private T getReparsedObject(Object obj)
         {
             DataResult<T> parseResult = this.codec.parse(TomlConfigOps.INSTANCE, obj);
-            return parseResult.get().map(
+            return parseResult.mapOrElse(
                     result -> result,
                     failure ->
                     {
@@ -210,7 +277,7 @@ public class ConfigHelper
         @Override
         public Object createBoolean(boolean value)
         {
-            return value;
+            return Boolean.valueOf(value);
         }
 
         @Override
@@ -281,7 +348,7 @@ public class ConfigHelper
                 return DataResult.error(() -> "mergeToMap called with not a map: " + map, map);
             }
             DataResult<String> stringResult = this.getStringValue(key);
-            Optional<PartialResult<String>> badResult = stringResult.error();
+            Optional<DataResult.Error<String>> badResult = stringResult.error();
             if (badResult.isPresent())
             {
                 return DataResult.error(() -> "key is not a string: " + key, map);
@@ -314,7 +381,7 @@ public class ConfigHelper
         public Object createMap(Stream<Pair<Object, Object>> map)
         {
             final Config result = TomlFormat.newConfig();
-            map.forEach(p -> result.add(this.getStringValue(p.getFirst()).getOrThrow(false, s -> {}), p.getSecond()));
+            map.forEach(p -> result.add(this.getStringValue(p.getFirst()).getOrThrow(), p.getSecond()));
             return result;
         }
 

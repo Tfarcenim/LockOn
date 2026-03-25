@@ -16,6 +16,6 @@ public class ModRenderType extends RenderStateShard {
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .createCompositeState(false);
-        return RenderType.create(LockOn.MODID, DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 256, true, true, renderTypeState);
+        return RenderType.create(LockOn.MOD_ID, DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 256, true, true, renderTypeState);
     }
 }
